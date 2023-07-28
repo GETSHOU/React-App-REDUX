@@ -1,0 +1,13 @@
+.App {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 80px 15px 15px 15px;
+	user-select: none;
+}
+
+.appTitle {
+	margin-bottom: 100px;
+	font-weight: bold;
+}
