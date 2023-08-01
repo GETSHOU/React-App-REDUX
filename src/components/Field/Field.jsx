@@ -1,40 +1,66 @@
-import PropTypes from 'prop-types';
-import { FieldLayout } from './FieldLayout';
+import { useState, useEffect } from 'react';
+import { store } from '../../store.js';
+import styles from './Field.module.css';
 
-export const Field = (props) => {
-	const {field, setField, currentPlayer, setCurrentPlayer, firstPlayer, secondPlayer, status, setStatus, statusWin, statusDraw, checkWin } = props;
+export const Field = ({constant}) => {
+	const [ state, setState ] = useState(store.getState());
+
+	useEffect(() => {
+		const unsubscribe = store.subscribe(() => {
+      setState(store.getState())
+    })
+
+    return () => unsubscribe();
+	}, []);
+
+	let field = state.field;
+	let status = state.status;
+	let currentPlayer = state.currentPlayer;
+
 	const fieldCopy = [...field];
 
-	const handlerMove = (i, cellValue) => {
-		if (status === statusWin
-			|| status === statusDraw
+	const checkWin = (field, currentPlayer) => {
+		return constant.WIN_PATTERNS.some((winPattern) => {
+			return winPattern.every((cellIndex) => field[cellIndex] === currentPlayer);
+		});
+	};
+
+	const handleMove = (i, cellValue) => {
+		if (status === constant.STATUS_WIN
+			|| status === constant.STATUS_DRAW
 			|| cellValue !== '') {
 			return;
 		}
 
 		fieldCopy[i] = currentPlayer;
-		setField(fieldCopy);
+		store.dispatch({type: 'SET_FIELD', payload: fieldCopy});
 
 		if(checkWin(fieldCopy, currentPlayer)) {
-			setStatus(statusWin);
+			store.dispatch({type: 'SET_STATUS', payload: constant.STATUS_WIN});
 		} else if (!checkWin(fieldCopy, currentPlayer) && !fieldCopy.includes('')) {
-			setStatus(statusDraw);
-		}	else if (currentPlayer === firstPlayer) {
-			setCurrentPlayer(secondPlayer);
+			store.dispatch({type: 'SET_STATUS', payload: constant.STATUS_DRAW});
+		}	else if (currentPlayer === constant.FIRST_PLAYER) {
+			store.dispatch({type: 'SET_CURRENT_PLAYER', payload: constant.SECOND_PLAYER});
 		}	else {
-			setCurrentPlayer(firstPlayer);
+			store.dispatch({type: 'SET_CURRENT_PLAYER', payload: constant.FIRST_PLAYER});
 		}
 	};
 
 	return (
-		<FieldLayout
-			field={field}
-			handlerMove={handlerMove}
-		/>
+		<div className={styles.fieldWrapper}>
+			<div className={styles.field}>
+				{field.map((cellValue, i) => {
+					return (
+						<button
+							key={i}
+							className={styles.cell}
+							onClick={() => handleMove(i, cellValue)}
+						>
+							{cellValue}
+						</button>
+							);
+				})}
+			</div>
+		</div>
 	);
 }
-
-FieldLayout.propTypes = {
-	field: PropTypes.array,
-	handlerMove: PropTypes.func
-};
